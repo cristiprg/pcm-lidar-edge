@@ -45,7 +45,7 @@ class TodoSimple(Resource):
         # PCM_Sioux-2018/DipperPointMapper/DipperPointMapper -par ./MLmodels-3/Hexagon1-all-features.xml -i ./MLmodels-3/1-3.laser -app -classified
         # ret_val = os.system("./DipperPointMapper -par ./MLmodels-3/Hexagon1-all-features.xml -app -classified -i " + file_name)
 
-        cmd = "./PCM_Sioux-2018/DipperPointMapper/DipperPointMapper -par ./MLmodels-3/Hexagon1-all-features.xml -i STDIN -app STDOUT"
+        cmd = "./DipperPointMapper -par ./MLmodels-3/Hexagon1-all-features.xml -i STDIN -app STDOUT"
         split_cmd = shlex.split(cmd)
         proc = subprocess.Popen(split_cmd,stdout=subprocess.PIPE,stdin=subprocess.PIPE)
         try:                        
