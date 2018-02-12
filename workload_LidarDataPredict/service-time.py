@@ -5,7 +5,9 @@ import time
 import os
 from datetime import datetime
 
-from subprocess import call
+import shlex
+import subprocess
+# from subprocess import call
 #call(["java", "-version"])
 
 app = Flask(__name__)
@@ -29,22 +31,32 @@ class TodoSimple(Resource):
     def post(self):
         global nr_crt
         # Create new file with an increasing counter in the end of its name
-        nr_crt += 1
-        file_name = SPARK_DATA_DIR + "/" + str(nr_crt) + "_predict_this.txt"
+        # nr_crt += 1
+        # file_name = SPARK_DATA_DIR + "/" + str(nr_crt) + "_predict_this.txt"
 
 
         print str(datetime.now()) + ": Received data "
         data = request.data
-        with open(file_name, "w") as csv_file:
-            csv_file.write(data)
+        # print data
+        # with open(file_name, "w") as csv_file:
+        #     csv_file.write(data)
 
         # Run the external C++ program
         # PCM_Sioux-2018/DipperPointMapper/DipperPointMapper -par ./MLmodels-3/Hexagon1-all-features.xml -i ./MLmodels-3/1-3.laser -app -classified
-        ret_val = os.system("./DipperPointMapper -par ./MLmodels-3/Hexagon1-all-features.xml -app -classified -i " + file_name)
+        # ret_val = os.system("./DipperPointMapper -par ./MLmodels-3/Hexagon1-all-features.xml -app -classified -i " + file_name)
 
-        if ret_val != 0:
-            return {'data' : 'ERROR, ret_val = ' + str(ret_val)}
-
+        cmd = "./PCM_Sioux-2018/DipperPointMapper/DipperPointMapper -par ./MLmodels-3/Hexagon1-all-features.xml -i STDIN -app STDOUT"
+        split_cmd = shlex.split(cmd)
+        proc = subprocess.Popen(split_cmd,stdout=subprocess.PIPE,stdin=subprocess.PIPE)
+        try:                        
+            result, _ = proc.communicate(input=data)
+            return {'data': result}
+        except subprocess.CalledProcessError as e:
+            print 'ERROR code = ' + str(e.returncode)
+            print 'CMD = ' + str(e.cmd)
+            return {'data' : 'ERROR code = ' + str(e.returncode)}
+        finally:
+            proc.wait()
 
         # Wait until file _SUCCESS is createad and then "cat" the content of part-00000 to the returned json.
         # success_file_name = file_name + "-classified/_SUCCESS"
@@ -64,10 +76,10 @@ class TodoSimple(Resource):
         #     return { 'data' : "Spark ret_val = " + ret_val }
 
 
-        predicted_file_name = os.path.splitext(file_name)[0] + "-classified.txt"
-        with open(predicted_file_name, "r") as predicted_file:
-             return { 'data' : predicted_file.read() }
-        return { 'data': ''}
+        # predicted_file_name = os.path.splitext(file_name)[0] + "-classified.txt"
+        # with open(predicted_file_name, "r") as predicted_file:
+        #      return { 'data' : predicted_file.read() }
+        # return { 'data': ''}
 
 api.add_resource(TodoSimple, '/time')
 
